@@ -52,7 +52,8 @@ class Interval extends React.PureComponent {
     return {
       ...this.props.getIntervalProps({
         interval: this.props.interval,
-        ...props
+        ...props,
+        style: Object.assign({}, this.getIntervalStyle(), props.style)
       }),
       onClick: composeEvents(this.onIntervalClick, props.onClick)
     }
@@ -70,9 +71,7 @@ class Interval extends React.PureComponent {
       })
     return (
       <div
-        {...this.getIntervalProps({
-          style: this.getIntervalStyle()
-        })}
+        {...this.getIntervalProps()}
       >
         <span>{intervalText}</span>
       </div>
