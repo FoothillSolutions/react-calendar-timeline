@@ -65,6 +65,9 @@ export default class App extends Component {
   }
 
   handleCanvasClick = (groupId, time) => {
+    this.setState(state => ({
+      groups: state.groups
+    }))
     console.log('Canvas clicked', groupId, moment(time).format())
   }
 
@@ -82,6 +85,9 @@ export default class App extends Component {
 
   handleItemSelect = (itemId, _, time) => {
     console.log('Selected: ' + itemId, moment(time).format())
+    this.setState((state)=>({
+      groups: state.groups.filter(_ => Math.random() > 0.5 )
+    }))
   }
 
   handleItemDoubleClick = (itemId, _, time) => {
@@ -194,8 +200,8 @@ export default class App extends Component {
           // moveResizeValidator={this.moveResizeValidator}
           rightSidebarWidth={150}
           rightSidebarContent={<div>Above The Right</div>}
-          stackItems
-        >
+          stackItems="space"
+          >
           <TimelineHeaders className="header-background">
             <SidebarHeader>
               {({ getRootProps }) => {

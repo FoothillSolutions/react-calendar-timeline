@@ -68,8 +68,9 @@ export function iterateTimes(start, end, unit, timeSteps, callback) {
   }
 
   while (time.valueOf() < end) {
-    let nextTime = moment(time).add(timeSteps[unit] || 1, `${unit}s`)
-    callback(time, nextTime)
+    let nextTime = moment(time).add(timeSteps[unit] || 1, `${unit}s`).startOf(`${unit}s`);
+    let endTime = moment(time).endOf(`${unit}s`)
+    callback(time, endTime)
     time = nextTime
   }
 }
@@ -148,10 +149,13 @@ export function getNextUnit(unit) {
     minute: 'hour',
     hour: 'day',
     day: 'month',
-    month: 'year'
+    month: 'year',
+    year: 'year'
   }
-
-  return nextUnits[unit] || ''
+  if (!nextUnits[unit]) {
+    throw new Error(`unit ${unit} in not acceptable`)
+  }
+  return nextUnits[unit]
 }
 
 /**
@@ -297,6 +301,30 @@ export function collision(a, b, lineHeight, collisionPadding = EPSILON) {
 }
 
 /**
+ * Calculate the position of a given item for a group that each in a line
+ * is being stacked
+ */
+export function groupStackInLines(
+  lineHeight,
+  item,
+  items,
+  groupHeight,
+  groupTop,
+  itemIndex
+) {
+  // calculate non-overlapping positions
+  let verticalMargin = lineHeight - item.dimensions.height
+  if (item.dimensions.stack && item.dimensions.top === null) {
+    item.dimensions.top = groupTop + verticalMargin + itemIndex * lineHeight
+  }
+  return {
+    groupHeight: lineHeight * items.length,
+    verticalMargin,
+    itemTop: item.dimensions.top
+  }
+}
+
+/**
  * Calculate the position of a given item for a group that
  * is being stacked
  */
@@ -310,7 +338,7 @@ export function groupStack(
 ) {
   // calculate non-overlapping positions
   let curHeight = groupHeight
-  let verticalMargin = lineHeight - item.dimensions.height
+  let verticalMargin = (lineHeight - item.dimensions.height) / 2
   if (item.dimensions.stack && item.dimensions.top === null) {
     item.dimensions.top = groupTop + verticalMargin
     curHeight = Math.max(curHeight, lineHeight)
@@ -336,7 +364,7 @@ export function groupStack(
         item.dimensions.top = collidingItem.dimensions.top + lineHeight
         curHeight = Math.max(
           curHeight,
-          item.dimensions.top + item.dimensions.height - groupTop
+          item.dimensions.top + item.dimensions.height + verticalMargin - groupTop
         )
       }
     } while (collidingItem)
@@ -395,7 +423,7 @@ export function stackAll(itemsDimensions, groupOrders, lineHeight, stackItems) {
     if (group.height) {
       groupHeights.push(group.height)
     } else {
-      groupHeights.push(Math.max(groupHeight + verticalMargin, lineHeight))
+      groupHeights.push(Math.max(groupHeight, lineHeight))
     }
   }
   return {
@@ -406,19 +434,24 @@ export function stackAll(itemsDimensions, groupOrders, lineHeight, stackItems) {
 }
 
 /**
- * 
- * @param {*} itemsDimensions 
- * @param {*} isGroupStacked 
- * @param {*} lineHeight 
- * @param {*} groupTop 
+ *
+ * @param {*} itemsDimensions
+ * @param {*} isGroupStacked
+ * @param {*} lineHeight
+ * @param {*} groupTop
  */
-export function stackGroup(itemsDimensions, isGroupStacked, lineHeight, groupTop) {
+export function stackGroup(
+  itemsDimensions,
+  isGroupStacked,
+  lineHeight,
+  groupTop
+) {
   var groupHeight = 0
   var verticalMargin = 0
   // Find positions for each item in group
   for (let itemIndex = 0; itemIndex < itemsDimensions.length; itemIndex++) {
     let r = {}
-    if (isGroupStacked) {
+    if (isGroupStacked === 'space') {
       r = groupStack(
         lineHeight,
         itemsDimensions[itemIndex],
@@ -427,8 +460,22 @@ export function stackGroup(itemsDimensions, isGroupStacked, lineHeight, groupTop
         groupTop,
         itemIndex
       )
+    } else if (isGroupStacked === 'lines') {
+      r = groupStackInLines(
+        lineHeight,
+        itemsDimensions[itemIndex],
+        itemsDimensions,
+        groupHeight,
+        groupTop,
+        itemIndex
+      )
     } else {
-      r = groupNoStack(lineHeight, itemsDimensions[itemIndex], groupHeight, groupTop)
+      r = groupNoStack(
+        lineHeight,
+        itemsDimensions[itemIndex],
+        groupHeight,
+        groupTop
+      )
     }
     groupHeight = r.groupHeight
     verticalMargin = r.verticalMargin

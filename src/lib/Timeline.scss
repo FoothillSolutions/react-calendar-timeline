@@ -108,7 +108,7 @@ $weekend: rgba(250, 246, 225, 0.5);
   .rct-vertical-lines {
     .rct-vl {
       position: absolute;
-      border-left: 1px solid $border-color;
+      border-right: 1px solid $border-color;
       z-index: 30;
       &.rct-vl-first {
         border-left-width: 2px;
